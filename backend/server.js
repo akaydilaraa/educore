@@ -156,12 +156,15 @@ app.get("/api/students/:id/analysis", async (req, res) => {
         if (sortedResults.length > 1) {
             const previousExam = sortedResults[1];
             
+            const latestTotal = latestExam.turkishNet + latestExam.mathNet + latestExam.scienceNet + latestExam.socialNet;
+            const previousTotal = previousExam.turkishNet + previousExam.mathNet + previousExam.scienceNet + previousExam.socialNet;
+
             if (latestExam.turkishNet < previousExam.turkishNet) dropDetails.push("Türkçe");
             if (latestExam.mathNet < previousExam.mathNet) dropDetails.push("Matematik");
             if (latestExam.scienceNet < previousExam.scienceNet) dropDetails.push("Fen Bilimleri");
             if (latestExam.socialNet < previousExam.socialNet) dropDetails.push("Sosyal Bilgiler");
             
-            if (dropDetails.length > 0) {
+            if (latestTotal < previousTotal) {
                 warning = true;
             }
         }
