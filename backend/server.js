@@ -9,12 +9,60 @@ const cors = require("cors");
 const Student = require("./models/Student");
 const ExamResult = require("./models/ExamResult");
 const GuidanceNote = require("./models/GuidanceNote");
+const User = require("./models/User");
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
 //API leri buraya ekleyeceğim
+
+// --- AUTHENTICATION & USER MANAGEMENT ---
+app.post("/api/login", async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const user = await User.findOne({ username, password });
+        if (!user) {
+            return res.status(401).json({ message: "Kullanıcı adı veya şifre hatalı." });
+        }
+        res.json({
+            _id: user._id,
+            username: user.username,
+            name: user.name,
+            role: user.role
+        });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.get("/api/users", async (req, res) => {
+    try {
+        const users = await User.find().select("-password");
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.post("/api/users", async (req, res) => {
+    try {
+        const newUser = new User(req.body);
+        await newUser.save();
+        res.status(201).json(newUser);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+app.delete("/api/users/:id", async (req, res) => {
+    try {
+        await User.findByIdAndDelete(req.params.id);
+        res.json({ message: "Kullanıcı silindi" });
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
 
 //Öğrenci işlemleri
 
@@ -202,7 +250,20 @@ const PORT = 5000;
 
 
 mongoose.connect(process.env.MONGO_URI)
-.then(() => console.log("MongoDB bağli"))
+.then(async () => {
+    console.log("MongoDB bağli");
+    
+    // Varsayılan kullanıcıları oluştur
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+        await User.insertMany([
+            { username: 'admin', password: '123', name: 'Sistem Yöneticisi', role: 'admin' },
+            { username: 'ogretmen', password: '123', name: 'Ahmet Öğretmen', role: 'teacher' },
+            { username: 'rehberlik', password: '123', name: 'Ayşe Rehber', role: 'counselor' }
+        ]);
+        console.log("Varsayılan kullanıcılar eklendi.");
+    }
+})
 .catch((err) => console.log(err));
 
 
